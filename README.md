@@ -1,4 +1,4 @@
-# Happier Fun Tokenizer for python3
+# Happiest Fun Tokenizer for python3
 This code is modified in order to adapt to Python3. And according to my own requirements, auther added some functions or params to preserve the specific tokens like nicknames, urls, and hashtags.
 The former version of code implements a basic, Twitter-aware tokenizer. Originally developed by [Christopher Potts](http://web.stanford.edu/~cgpotts/) 
 ([Happy Fun Tokenizer](http://sentiment.christopherpotts.net/code-data/happyfuntokenizing.py)) and updated by [H. Andrew Schwartz](http://www3.cs.stonybrook.edu/~has/). Shared with Christopher's permission. Further updated by [Caspar Chan](https://github.com/channel960608/happiestfuntokenizing).  
