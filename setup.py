@@ -22,7 +22,7 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.6',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 if __name__ == "__main__":
 
