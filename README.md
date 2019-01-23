@@ -49,7 +49,7 @@ pip install --user happiestfuntokenizing
 
 ## Requirements
 
-This uses Python 3.* Package dependencies include `re` and `htmlentitydefs`.
+This uses Python 3.* Package dependencies include `re` and `html`.
 
 ## License
 
