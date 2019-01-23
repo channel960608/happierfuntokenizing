@@ -1,16 +1,16 @@
 from setuptools import setup
 
-DESCRIPTION = """This code implements a basic, Twitter-aware tokenizer. Originally developed by Christopher Potts and 
+DESCRIPTION = """This code is updated by Auther to adapt to Python3. The former version of code implements a basic, Twitter-aware tokenizer. Originally developed by Christopher Potts and 
 updated by the World Well-Being Project based out of the University of Pennsylvania and Stony Brook University. Shared with permission."""
 
-DISTNAME = 'happierfuntokenizing'
+DISTNAME = 'happiestfuntokenizing'
 LICENSE = 'GNU General Public License v3 (GPLv3)'
-AUTHOR = "Christopher Potts, H. Andrew Schwartz, Maarten Sap, Salvatore Giorgi"
+AUTHOR = "Christopher Potts, H. Andrew Schwartz, Maarten Sap, Salvatore Giorgi, Caspar Chan"
 EMAIL = "hansens@sas.upenn.edu, sgiorgi@sas.upenn.edu"
-MAINTAINER = "Salvatore Giorgi, H. Andrew Schwartz"
-MAINTAINER_EMAIL = "sgiorgi@sas.upenn.edu, hansens@sas.upenn.edu"
+MAINTAINER = "Caspar Cgab"
+MAINTAINER_EMAIL = "channel960608@gmail.com"
 URL = 'http://dlatk.wwbp.org'
-DOWNLOAD_URL = 'https://github.com/dlatk/happierfuntokenizing'
+DOWNLOAD_URL = 'https://github.com/channel960608/happiestfuntokenizing'
 CLASSIFIERS = [
   'Environment :: Console',
   'Natural Language :: English',
@@ -18,11 +18,11 @@ CLASSIFIERS = [
   'Intended Audience :: Developers',
   'Intended Audience :: Science/Research',
   'Programming Language :: Python',
-  'Programming Language :: Python :: 2',
-  'Programming Language :: Python :: 2.7',
+  'Programming Language :: Python :: 3',
+  'Programming Language :: Python :: 3.6',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '1.0.5'
+VERSION = '0.0.1'
 
 if __name__ == "__main__":
 

@@ -36,10 +36,13 @@ and Twitter is cooperating, then it should tokenize a random
 English-language tweet.
 """
 
+
 ######################################################################
 
 import re
-import htmlentitydefs
+# import htmlentitydefs
+from html.parser import HTMLParser
+from html.entities import name2codepoint
 
 ######################################################################
 # The following strings are components in the regular expression
@@ -58,13 +61,13 @@ import htmlentitydefs
 emoticon_string = r"""
     (?:
       [<>]?
-      [:;=8>]                    # eyes
+      [:;=8]                     # eyes
       [\-o\*\']?                 # optional nose
-      [\)\]\(\[dDpPxX/\:\}\{@\|\\] # mouth      
+      [\)\]\(\[dDpP/\:\}\{@\|\\] # mouth      
       |
-      [\)\]\(\[dDpPxX/\:\}\{@\|\\] # mouth
+      [\)\]\(\[dDpP/\:\}\{@\|\\] # mouth
       [\-o\*\']?                 # optional nose
-      [:;=8<]                    # eyes
+      [:;=8]                     # eyes
       [<>]?
       |
       <[/\\]?3                         # heart(added: has)
@@ -98,21 +101,8 @@ regex_strings = (
     # Emoticons:
     emoticon_string
     ,    
-    # http:
-    # Web Address:
-    r"""(?:(?:http[s]?\:\/\/)?(?:[\w\_\-]+\.)+(?:com|net|gov|edu|info|org|ly|be|gl|co|gs|pr|me|cc|us|gd|nl|ws|am|im|fm|kr|to|jp|sg)(?:\/[\s\b$])?)"""
-    ,
-    r"""(?:http[s]?\:\/\/)"""   #need to capture it alone sometimes
-    ,
-    #command in parens:
-    r"""(?:\[[\w_]+\])"""   #need to capture it alone sometimes
-    ,
-    # HTTP GET Info
-    r"""(?:\/\w+\?(?:\;?\w+\=\w+)+)"""
-    ,
     # HTML tags:
-    r"""(?:<[^>]+\w=[^>]+>|<[^>]+\s\/>|<[^>\s]+>?|<?[^<\s]+>)"""
-    #r"""(?:<[^>]+\w+[^>]+>|<[^>\s]+>?|<?[^<\s]+>)"""
+     r"""<[^>]+>"""
     ,
     # Twitter username:
     r"""(?:@[\w_]+)"""
@@ -120,9 +110,14 @@ regex_strings = (
     # Twitter hashtags:
     r"""(?:\#+[\w_]+[\w\'_\-]*[\w_]+)"""
     ,
+    # Http url:
+    r"""(https?://[0-9a-zA-Z\_/-/.]*)"""
+    ,
+    # HTTP GET Info
+    r"""(?:\/\w+\?(?:\;?\w+\=\w+)+)""",
     # Remaining word types:
     r"""
-    (?:[\w][\w'\-_]+[\w])       # Words with apostrophes or dashes.
+    (?:[a-z][a-z'\-_]+[a-z])       # Words with apostrophes or dashes.
     |
     (?:[+\-]?\d+[,/.:-]\d+[+\-]?)  # Numbers, including fractions, decimals.
     |
@@ -141,20 +136,26 @@ word_re = re.compile(r"""(%s)""" % "|".join(regex_strings), re.VERBOSE | re.I | 
 
 # The emoticon string gets its own regex so that we can preserve case for them as needed:
 emoticon_re = re.compile(regex_strings[1], re.VERBOSE | re.I | re.UNICODE)
+username_re = re.compile(regex_strings[3], re.VERBOSE | re.I | re.UNICODE)
+url_re = re.compile(regex_strings[5], re.VERBOSE | re.I | re.UNICODE)
+hashtag_re = re.compile(regex_strings[4], re.VERBOSE | re.I | re.UNICODE)
 
 # These are for regularizing HTML entities to Unicode:
 html_entity_digit_re = re.compile(r"&#\d+;")
 html_entity_alpha_re = re.compile(r"&\w+;")
 amp = "&amp;"
 
-hex_re = re.compile(r'\\x[0-9a-z]{1,4}')
-
-######################################################################
+#####################################################################
 
 class Tokenizer:
-    def __init__(self, preserve_case=False, use_unicode=True):
+    def __init__(self, preserve_case=False, preserve_keywords=False):
         self.preserve_case = preserve_case
-        self.use_unicode = use_unicode
+        # preserve_list是在分词过程中提取出来并需要保存的特定字段，例如tweet中@的用户名，hash标签，url等等，暂时支持的 
+        # username, url, hashtag
+        # 用法如下
+        # preserve_list=['username', 'url', 'hashtag']
+        self.preserve_keywords = preserve_keywords
+        self.preserve_dict = {}
 
     def tokenize(self, s):
         """
@@ -162,23 +163,46 @@ class Tokenizer:
         Value: a tokenize list of strings; conatenating this list returns the original string if preserve_case=False
         """        
         # Try to ensure unicode:
-        if self.use_unicode:
-            try:
-                s = unicode(s)
-            except UnicodeDecodeError:
-                s = str(s).encode('string_escape')
-                s = unicode(s)
+        try:
+            s = str(s)
+        except UnicodeDecodeError:
+            s = str(s).encode('string_escape')
+            s = str(s)
         # Fix HTML character entitites:
         s = self.__html2unicode(s)
-        s = self.__removeHex(s)
         # Tokenize:
         words = word_re.findall(s)
-        #print words #debug
+        # findaall返回的是元素为tuple的list，将其转化为一维的list
+        words = sum([list(i) for i in words], [])
+        # 筛选掉其中为空的元素
+        words = list(filter(lambda x : x!='', words))
+        # list_words = (lambda x : x[0] in words)
+        # return list_words
+        
+        if self.preserve_keywords:
+            preserve_dict = {}
+            usernames = username_re.findall(s)
+            urls = url_re.findall(s)
+            hashtags = hashtag_re.findall(s)
+            preserve_dict['username'] = usernames
+            preserve_dict['url'] = urls
+            preserve_dict['hashtag'] = hashtags
+            self.preserve_dict = preserve_dict
+            words = list(filter(lambda x : x not in urls, words)) 
+
+
         # Possible alter the case, but avoid changing emoticons like :D into :d:
         if not self.preserve_case:            
             words = map((lambda x : x if emoticon_re.search(x) else x.lower()), words)
         
-        return words
+        return list(words)
+    
+    def get_preserve_dict(self):
+        if self.preserve_keywords: 
+            return self.preserve_dict
+        else:
+            return None
+                
 
     def tokenize_random_tweet(self):
         """
@@ -188,7 +212,7 @@ class Tokenizer:
         try:
             import twitter
         except ImportError:
-            print "Apologies. The random tweet functionality requires the Python twitter library: http://code.google.com/p/python-twitter/"
+            print("Apologies. The random tweet functionality requires the Python twitter library: http://code.google.com/p/python-twitter/")
         from random import shuffle
         api = twitter.Api()
         tweets = api.GetPublicTimeline()
@@ -211,7 +235,7 @@ class Tokenizer:
                 entnum = ent[2:-1]
                 try:
                     entnum = int(entnum)
-                    s = s.replace(ent, unichr(entnum))	
+                    s = s.replace(ent, chr(entnum))	
                 except:
                     pass
         # Now the alpha versions:
@@ -220,37 +244,27 @@ class Tokenizer:
         for ent in ents:
             entname = ent[1:-1]
             try:            
-                s = s.replace(ent, unichr(htmlentitydefs.name2codepoint[entname]))
+                s = s.replace(ent, chr(name2codepoint[entname]))
             except:
                 pass                    
             s = s.replace(amp, " and ")
         return s
 
-    def __removeHex(self, s):
-        return hex_re.sub(' ', s)
-
-
 ###############################################################################
 
 if __name__ == '__main__':
-    #tok = Tokenizer(preserve_case=True)
-    tok = Tokenizer(preserve_case=False)
-
-    import sys
-
+    tok = Tokenizer(preserve_keywords=True)
     samples = (
-        u"RT @ #happyfuncoding: this is a typical Twitter tweet :-)",
-        u"It's perhaps noteworthy that phone numbers like +1 (800) 123-4567, (800) 123-4567, and 123-4567 are treated as words despite their whitespace.",
-        u'Something </sarcasm> about <fails to break this up> <3 </3 <\\3 mañana vergüenza güenza création tonterías tonteréas <em class="grumpy">pain</em> <meta name="viewport" content="width=device-width"> <br />',
-        u"This is more like a Facebook message with a url: http://www.youtube.com/watch?v=dQw4w9WgXcQ, youtube.com google.com https://google.com/ ",
+        u"THE BURLESQUE BOOTCAMP SYDNEY - Open Date tickets now available from http://bbootcampsyd.eventbrite.com/ for Jan /... http://bit.ly/rCenZ",
+        u"@dneighbors When you find one, I'd like to know them as well. :) https://twiter/test.phd",
+        u"RT @cahnnle #happyfuncoding: this is a typical Twitter tweet :-) https://twiter/test.phd",
         u"HTML entities &amp; other Web oddities can be an &aacute;cute <em class='grumpy'>pain</em> >:(",
+        u"It's perhaps noteworthy that phone numbers like +1 (800) 123-4567, (800) 123-4567, and 123-4567 are treated as words despite their whitespace."
         )
 
-    if len(sys.argv) > 1 and (sys.argv[1]):
-        samples = sys.argv[1:]
-
     for s in samples:
-        print "======================================================================"
-        print s
+        print("======================================================================")
+        print(s)
         tokenized = tok.tokenize(s)
-        print "\n".join(tokenized).encode('utf8', 'ignore') if tok.use_unicode else "\n".join(tokenized)
+        print(tokenized)
+        print(tok.get_preserve_dict())
