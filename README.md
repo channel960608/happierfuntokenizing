@@ -7,7 +7,7 @@ The former version of code implements a basic, Twitter-aware tokenizer. Original
 ### Usage
 
 ```python
-from happiestfuntokenizing.happiestfuntokenizing import Tokenizer
+from happiestfuntokenizing import Tokenizer
 
 tokenizer = Tokenizer()
 
