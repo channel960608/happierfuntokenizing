@@ -22,7 +22,8 @@ CLASSIFIERS = [
   'Programming Language :: Python :: 3.6',
   'Topic :: Scientific/Engineering',
 ]
-VERSION = '0.0.3'
+VERSION = '0.0.4'
+PACKAGES = ['happiestfuntokenizing']
 
 if __name__ == "__main__":
 
@@ -35,4 +36,5 @@ if __name__ == "__main__":
       url=URL,
       download_url=DOWNLOAD_URL,
       classifiers=CLASSIFIERS,
+      packages=PACKAGES,
   )
